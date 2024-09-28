@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Extension</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <header>
+    <h1>Google Sheet Manager</h1>
+  </header>
+  <main>
+    <section>
+      <button id="connectAccount" class="btn-primary">Connect Google Account</button>
+      <span id="status_connectaccount" class="status"></span>
+      <button id="createSheet" class="btn-primary">Create Sheet</button>
+      <span id="status_createsheet" class="status"></span>
+    </section>
+    <section>
+      <form id="loginForm" class="form">
+        <label for="email">Email:</label>
+        <input type="email" id="email" required />
+        <label for="password">Password:</label>
+        <input type="password" id="password" required />
+        <button type="submit" class="btn-primary">Submit</button>
+      </form>
+      <span id="status_otter" class="status"></span>
+      <span id="otter_result" class="result"></span>
+    </section>
+    <section id="buttonContainer"></section>
+  </main>
+  <script src="scripts.js"></script>
+</body>
+
+</html>

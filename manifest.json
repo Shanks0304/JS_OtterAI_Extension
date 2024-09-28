@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json.schemastore.org/chrome-manifest.json",
+  "manifest_version": 3,
+  "version": "0.0.1",
+  "name": "otterai",
+  "description": "Fetch and display your speech data from Otter.ai",
+  "icons": {
+    "16": "images/extension_16.png",
+    "48": "images/extension_48.png"
+  },
+  "permissions": [
+    "storage",
+    "tabs",
+    "activeTab",
+    "scripting",
+    "identity",
+    "identity.email"
+  ],
+  "background": {
+    "service_worker": "./background/index.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "./action/index.html",
+    "default_title": "Action",
+    "default_icon": {
+      "16": "images/extension_16.png",
+      "48": "images/extension_48.png"
+    }
+  },
+  "host_permissions": [
+    "https://google.com/*",
+    "https://www.google.com/*",
+    "https://*.google.com/*",
+    "https://otter.ai/*",
+    "https://api.openai.com/*",
+    "https://sheets.googleapis.com/v4/*"
+  ],
+  "oauth2": {
+    "client_id": "1093831381354-c7cttj92qjshtvvj1rhqp1usnm37mntn.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/spreadsheets",
+      "https://www.googleapis.com/auth/drive.file"
+    ]
+  }
+}
