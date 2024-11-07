@@ -1,36 +1,37 @@
 import OpenAIChatHandler from './chatHandler.js';
 
-export async function handleCreateSheet(sendResponse) {
-    const tokenResult = await chromeStorageGet('googleAuthToken');
-    const token = tokenResult.googleAuthToken;
-    if (!token) {
-        console.error('No token found. Please connect your Google Account first.');
-        sendResponse({ message: 'No token found. Please connect your Google Account first.' });
-        return;
-    }
+// export async function handleCreateSheet(sendResponse) {
+//     const tokenResult = await chromeStorageGet('googleAuthToken');
+//     const token = tokenResult.googleAuthToken;
+//     if (!token) {
+//         console.error('No token found. Please connect your Google Account first.');
+//         sendResponse({ message: 'No token found. Please connect your Google Account first.' });
+//         return;
+//     }
 
-    const spreadsheetResult = await chromeStorageGet('new_spreadsheetId');
-    const spreadsheetId = spreadsheetResult.new_spreadsheetId;
-    if (spreadsheetId) {
-        console.log('Spreadsheet already exists:', spreadsheetId);
-        sendResponse({ message: 'Spreadsheet already exists' });
-        return;
-    }
+//     const spreadsheetResult = await chromeStorageGet('new_spreadsheetId');
+//     const spreadsheetId = spreadsheetResult.new_spreadsheetId;
+//     if (spreadsheetId) {
+//         console.log('Spreadsheet already exists:', spreadsheetId);
+//         sendResponse({ message: 'Spreadsheet already exists' });
+//         return;
+//     }
 
-    try {
-        await createSpreadsheet(token, sendResponse);
-        console.log('Spreadsheet is created successfully!');
-        sendResponse({ message: 'Spreadsheet is created successfully!' });
-    } catch (error) {
-        if (error.message.includes('Unauthorized')) {
-            // Trigger re-authentication and retrying  
-            handleAuthTokenExpiration(token, sendResponse, () => handleCreateSheet(sendResponse));
-        } else {
-            sendResponse({ message: 'Failed to update spreadsheet: ' + error.message });
-        }
-    }
-}
-async function createSpreadsheet(accessToken, sendResponse) {
+//     try {
+//         await createSpreadsheet(token, sendResponse);
+//         console.log('Spreadsheet is created successfully!');
+//         sendResponse({ message: 'Spreadsheet is created successfully!' });
+//     } catch (error) {
+//         if (error.message.includes('Unauthorized')) {
+//             // Trigger re-authentication and retrying
+//             handleAuthTokenExpiration(token, sendResponse, () => handleCreateSheet(sendResponse));
+//         } else {
+//             sendResponse({ message: 'Failed to update spreadsheet: ' + error.message });
+//         }
+//     }
+// }
+
+async function createSpreadsheet(title, accessToken, dataset) {
     const response = await fetch('https://sheets.googleapis.com/v4/spreadsheets', {
         method: 'POST',
         headers: {
@@ -39,21 +40,53 @@ async function createSpreadsheet(accessToken, sendResponse) {
         },
         body: JSON.stringify({
             properties: {
-                title: 'Master Spreadsheet',
+                title: title,
             },
+            sheets: [{
+                properties: {
+                    title: 'Scope Items'
+                }
+            }, {
+                properties: {
+                    title: 'Action Items'
+                }
+            }, {
+                properties: {
+                    title: 'Client Challenges'
+                }
+            }, {
+                properties: {
+                    title: 'Meeting Notes'
+                }
+            }, {
+                properties: {
+                    title: 'Deliverables'
+                }
+            }, {
+                properties: {
+                    title: 'Contacts'
+                }
+            }, {
+                properties: {
+                    title: 'Risks and Issues'
+                }
+            }
+            ]
         }),
     });
 
     const data = await response.json();
     if (response.ok) {
         console.log('Spreadsheet created with ID:', data.spreadsheetId);
-        chrome.storage.local.set({ new_spreadsheetId: data.spreadsheetId }, () => {
-            sendResponse({ message: 'New SpreadSheet is created successfully.' });
-        });
+        await updateSpreadSheet(data.spreadsheetId, accessToken, dataset)
         return;
     } else {
-        console.error('Failed to create spreadsheet:', error);
-        throw new Error('Failed to create spreadsheet. Status code: ' + response.status + ', Message: ' + errorResult.error.message);
+        const errorResult = await response.json();
+        if (errorResult.error.status !== 'UNAVAILABLE') {
+            throw new Error('Failed to fetch spreadsheet metadata. Status code: ' + errorResult.error.status + ', Message: ' + errorResult.error.message);
+        } else {
+            throw new Error('Try again later. The service might be temporarily unavailable.')
+        }
     }
 }
 
@@ -70,123 +103,139 @@ export async function handleAddSheets(request, sendResponse) {
             const meeting_detail = result.otterResult[number_index];
             console.log('selected dataset: ', meeting_detail);
 
-            const chat_response = await chatHandler.getResponse(meeting_detail.transcript);
-            console.log('OpenAI response:', chat_response);
-            meeting_detail.transcript = chat_response;
-
             const tokenResult = await chromeStorageGet('googleAuthToken');
             const token = tokenResult.googleAuthToken;
             if (!token) {
-                sendResponse({ message: 'No token found. Please connect your Google Account first.' });
+                sendResponse({
+                    success: false,
+                    error: 'No token found. Please connect your Google Account first.'
+                });
                 return;
             }
+            // Get OpenAI response
+            try {
+                const chat_response = await chatHandler.getResponse(meeting_detail.transcript);
+                console.log('OpenAI response:', chat_response);
+                meeting_detail.transcript = chat_response;
 
-            const spreadsheetResult = await chromeStorageGet('new_spreadsheetId');
-            const spreadsheetId = spreadsheetResult.new_spreadsheetId;
-            if (spreadsheetId) {
-                console.log('Spreadsheet already exists:', spreadsheetId);
+                // Generate and populate spreadsheet
                 try {
-                    await populateSpreadsheet(token, spreadsheetId, meeting_detail);
+                    await populateSpreadsheet(token, meeting_detail);
                     console.log('Spreadsheet is updated successfully!');
-                    sendResponse({ message: 'Spreadsheet is updated successfully!' });
+                    sendResponse({
+                        success: true,
+                        message: 'Successfully created and populated spreadsheet'
+                    });
                 } catch (error) {
-                    console.error(error.message);
+                    console.error('Spreadsheet error:', error);
                     if (error.message.includes('invalid')) {
-                        // Trigger re-authentication and retrying  
+                        // Handle token expiration
                         handleAuthTokenExpiration(token, sendResponse, () => handleAddSheets(request, sendResponse));
                     } else {
-                        sendResponse({ message: 'Failed to update spreadsheet: ' + error.message });
+                        sendResponse({
+                            success: false,
+                            error: `Failed to update spreadsheet: ${error.message}`
+                        });
                     }
                 }
-            } else {
-                sendResponse({ message: 'No spreadsheet found. Please create a new spreadsheet first.' });
+            } catch (error) {
+                console.error('OpenAI error:', error);
+                sendResponse({
+                    success: false,
+                    error: `Failed to process meeting with OpenAI: ${error.message}`
+                });
             }
         } else {
-            sendResponse({ message: 'The meeting data is not available. Please get this by submitting email and password of Otter.ai.' });
+            sendResponse({
+                success: false,
+                error: 'The meeting data is not available. Please submit Otter.ai credentials first.'
+            });
+            return;
         }
     } catch (error) {
-        console.error('Error handling request:', error);
-        sendResponse({ message: 'An error occurred: ' + error.message });
+        console.error('General error:', error);
+        sendResponse({
+            success: false,
+            error: `An unexpected error occurred: ${error.message}`
+        });
     }
 }
 
-async function populateSpreadsheet(accessToken, spreadsheetId, jsonData) {
+async function populateSpreadsheet(accessToken, jsonData) {
     console.log('Populate Spreadsheet with JSON data.');
     let date = new Date(jsonData.end_time * 1000);
-    const sheetTitle = date.toString() + `_${jsonData.title}`;
+    const masterTitle = `${jsonData.title}__` + date.toString();
+    try {
+        const exists = await checkSpreadsheet(masterTitle, accessToken);
+        if (exists) {
+            const spreadsheetId = await retrieveSpreadsheetId(masterTitle, accessToken);
+            console.log('Existing SpreadSheet ID: ', spreadsheetId);
+            await updateSpreadSheet(spreadsheetId, accessToken, jsonData);
+        } else {
+            await createSpreadsheet(masterTitle, accessToken, jsonData);
+        }
+    } catch (error) {
+        console.error(error);
+        throw new Error(error.message)
+    }
 
-    // Fetch existing sheets
-    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties.title`, {
-        method: 'GET',
+}
+
+async function updateSpreadSheet(spreadsheetId, accessToken, dataset) {
+    const baseUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`;
+
+    // Fetch spreadsheet to get the sheet information  
+    const sheetsResponse = await fetch(`${baseUrl}?fields=sheets.properties`, {
         headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-        },
+            'Authorization': `Bearer ${accessToken}`
+        }
     });
+    const sheetsData = await sheetsResponse.json();
+    console.log("Sheets Data Response: ", sheetsData);
+    if (!sheetsResponse.ok) {
+        if (sheetsData.error.status !== 'UNAVAILABLE') {
+            throw new Error('Failed to fetch spreadsheet metadata. Status code: ' + sheetsData.error.status + ', Message: ' + sheetsData.error.message);
+        } else {
+            throw new Error('Try again later. The service might be temporarily unavailable.')
+        }
+    }
+    const sheets = sheetsData.sheets;
 
-    if (!response.ok) {
-        const errorResult = await response.json();
-        if (errorResult.error.status !== 'UNAVAILABLE') {
-            throw new Error('Failed to fetch spreadsheet metadata. Status code: ' + errorResult.error.status + ', Message: ' + errorResult.error.message);
+    // Clear each sheet  
+    const requests = sheets.map(sheet => ({
+        updateCells: {
+            range: {
+                sheetId: sheet.properties.sheetId
+            },
+            fields: 'userEnteredValue'
+        }
+    }));
+
+    const clearResponse = await fetch(`${baseUrl}:batchUpdate`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({ requests })
+    });
+    const clearData = await clearResponse.json();
+    console.log("Clear Response: ", clearData);
+
+    if (!clearResponse.ok) {
+        if (clearData.error.status !== 'UNAVAILABLE') {
+            throw new Error('Failed to fetch spreadsheet metadata. Status code: ' + clearData.error.status + ', Message: ' + clearData.error.message);
         } else {
             throw new Error('Try again later. The service might be temporarily unavailable.')
         }
     }
 
-    const existingSheets = await response.json();
-    const sheetExists = existingSheets.sheets.some(sheet => sheet.properties.title === sheetTitle);
-    console.log('Existing sheets: ', sheetExists);
-    // Add new sheet if it doesn't exist  
-    if (!sheetExists) {
-        console.log('There is no matched sheet on master spread. Will create new sheet.');
-        const result = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                requests: [{
-                    addSheet: {
-                        properties: {
-                            title: sheetTitle,
-                        },
-                    },
-                }],
-            }),
-        });
-
-        if (!result.ok) {
-            const errorResult = await result.json();
-            throw new Error('Failed to add a new sheet. Status code: ' + errorResult.error.status + ', Message: ' + errorResult.error.message);
-        }
-        console.log('Created new sheet.');
-    }
-
-    console.log('Delete previous data from Sheet.');
-    // Clear the existing data on the sheet
-    const clearRange = `${sheetTitle}!A1:Z`;
-    const clearResult = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchClear`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            ranges: [clearRange]
-        }),
-    });
-    if (!clearResult.ok) {
-        const errorResult = await clearResult.json();
-        throw new Error('Failed to delete values to the sheet. Status code: ' + errorResult.error.status + ', Message: ' + errorResult.error.message);
-    }
-
     console.log('Start adding JSON data onto the Sheet from here.');
     // Process and append values to the sheet  
-    for (const [key, records] of Object.entries(jsonData.transcript)) {
+    for (const [key, records] of Object.entries(dataset.transcript)) {
         if (Array.isArray(records)) {
+            const range = `${encodeURIComponent(key)}!A1`;  // simplified range  
             const sheetValues = formatJsonDataForSheet(records, key);
-            const range = `${encodeURIComponent(sheetTitle)}!A1`;  // simplified range  
 
             const appendResult = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}:append?valueInputOption=RAW`, {
                 method: 'POST',
@@ -208,8 +257,6 @@ async function populateSpreadsheet(accessToken, spreadsheetId, jsonData) {
 }
 
 function formatJsonDataForSheet(tableArray, title) {
-    console.log('Title', title);
-    console.log('Table Array', tableArray);
     const template = {
         'Scope Items': ['Status', 'Priority', 'Details', 'Owner', 'Relevant Notes',],
         'Action Items': ['Date Identified', 'Due Date', 'Status', 'Details', 'Owners', 'Notes'],
@@ -219,13 +266,14 @@ function formatJsonDataForSheet(tableArray, title) {
         'Contacts': ['Name', 'Focus Area', 'Role', 'Notes'],
         'Risks and Issues': ['Type', 'Details', 'Impact', 'Status', 'Owner', 'Probabilitiy']
     }
-    const sheetData = [[title]];
     let headers;
     if (tableArray.length === 0) {
         headers = template[title];
     } else {
         headers = Object.keys(tableArray[0]);
     }
+
+    const sheetData = [];
 
     // Add the title as the first row  
 
@@ -302,4 +350,53 @@ function convertToString(value) {
 
     // Use toString for other primitives (strings, numbers, booleans, symbols)  
     return String(value);
+}
+
+async function checkSpreadsheet(fileName, accessToken) {
+    const query = `name='${fileName}' and mimeType='application/vnd.google-apps.spreadsheet'`;
+    const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name)`;
+
+    const response = await fetch(url, {
+        headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Accept': 'application/json'
+        }
+    });
+
+    if (!response.ok) {
+        const errorInfo = await response.json();
+        if (errorInfo.error.status !== 'UNAVAILABLE') {
+            throw new Error('Failed to fetch spreadsheet metadata. Status code: ' + errorInfo.error.status + ', Message: ' + errorInfo.error.message);
+        } else {
+            throw new Error('Try again later. The service might be temporarily unavailable.')
+        }
+    }
+
+    const data = await response.json();
+
+    if (data.files.length > 0) {
+        console.log('Spreadsheet found:', data.files);
+        return true; // File exists  
+    } else {
+        console.log('No spreadsheet found with the given name.');
+        return false; // File does not exist  
+    }
+}
+async function retrieveSpreadsheetId(title, authToken) {
+    const url = `https://www.googleapis.com/drive/v3/files?q=name='${encodeURIComponent(title)}' and mimeType='application/vnd.google-apps.spreadsheet'&fields=files(id,name)`;
+
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${authToken}`
+        }
+    });
+
+    const data = await response.json();
+
+    if (data.files && data.files.length > 0) {
+        return data.files[0].id; // Return the first match if there are multiple  
+    } else {
+        throw new Error(`No spreadsheet found with title: ${title}`);
+    }
 }

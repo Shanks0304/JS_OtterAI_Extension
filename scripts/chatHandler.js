@@ -1,6 +1,6 @@
 class OpenAIChatHandler {
     constructor() {
-        this.apiKey = "YOUR_OPEN_AI_KEY"
+        this.apiKey = "YOUR_OPENAI_API_KEY"
     }
 
     /**  

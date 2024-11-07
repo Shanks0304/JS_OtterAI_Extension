@@ -34,13 +34,16 @@
     "https://*.google.com/*",
     "https://otter.ai/*",
     "https://api.openai.com/*",
-    "https://sheets.googleapis.com/v4/*"
+    "https://sheets.googleapis.com/v4/*",
+    "https://accounts.google.com/*"
   ],
   "oauth2": {
     "client_id": "1093831381354-c7cttj92qjshtvvj1rhqp1usnm37mntn.apps.googleusercontent.com",
     "scopes": [
       "https://www.googleapis.com/auth/spreadsheets",
-      "https://www.googleapis.com/auth/drive.file"
+      "https://www.googleapis.com/auth/drive.file",
+      "https://www.googleapis.com/auth/userinfo.profile",
+      "https://www.googleapis.com/auth/userinfo.email"
     ]
   }
 }

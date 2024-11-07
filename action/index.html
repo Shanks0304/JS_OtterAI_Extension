@@ -4,34 +4,54 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Extension</title>
+  <title>Meeting Manager</title>
   <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 
 <body>
-  <header>
-    <h1>Google Sheet Manager</h1>
-  </header>
-  <main>
-    <section>
-      <button id="connectAccount" class="btn-primary">Connect Google Account</button>
-      <span id="status_connectaccount" class="status"></span>
-      <button id="createSheet" class="btn-primary">Create Sheet</button>
-      <span id="status_createsheet" class="status"></span>
-    </section>
-    <section>
-      <form id="loginForm" class="form">
-        <label for="email">Email:</label>
-        <input type="email" id="email" required />
-        <label for="password">Password:</label>
-        <input type="password" id="password" required />
-        <button type="submit" class="btn-primary">Submit</button>
-      </form>
-      <span id="status_otter" class="status"></span>
-      <span id="otter_result" class="result"></span>
-    </section>
-    <section id="buttonContainer"></section>
-  </main>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="header-content">
+        <h1>Meeting Manager</h1>
+        <div class="account-section">
+          <button id="accountButton" class="account-button">
+            <div class="account-avatar">
+              <img id="avatarImg" src="../assets/default-avatar.png" alt="Account">
+            </div>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <div class="auth-status">
+        <span id="status_connectaccount" class="status-text"></span>
+      </div>
+
+      <section class="login-section">
+        <form id="loginForm" class="login-form">
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" required placeholder="Enter your Otter.ai email">
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" required placeholder="Enter your password">
+          </div>
+          <button type="submit" class="submit-button">Connect Otter.ai</button>
+        </form>
+        <div class="status-container">
+          <span id="status_otter" class="status-text"></span>
+          <span id="otter_result" class="result-text"></span>
+        </div>
+      </section>
+
+      <section class="meetings-section">
+        <div id="buttonContainer" class="meeting-list"></div>
+      </section>
+    </main>
+  </div>
   <script src="scripts.js"></script>
 </body>
 

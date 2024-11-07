@@ -1,100 +1,355 @@
 :root {
   --primary-color: #1a73e8;
-  --secondary-color: #ffffff;
-  --background-color: #121212;
-  --text-color: #e0e0e0;
-  --border-radius: 5px;
+  --primary-hover: #1557b0;
+  --background-color: #ffffff;
+  --surface-color: #f8f9fa;
+  --text-primary: #202124;
+  --text-secondary: #5f6368;
+  --border-color: #dadce0;
+  --error-color: #d93025;
+  --success-color: #188038;
+  --border-radius: 8px;
+  --shadow-1: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
 }
 
-html,
-body {
+* {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-size: 16px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
   background-color: var(--background-color);
-  color: var(--text-color);
+  color: var(--text-primary);
   width: 400px;
   height: 600px;
 }
 
+.app-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 h1 {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-  color: var(--primary-color);
-  text-align: center;
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text-primary);
 }
 
-main {
-  padding: 1rem;
+.account-section {
+  position: relative;
 }
 
-.action-buttons,
-form {
-  margin-bottom: 2rem;
-}
-
-.btn-primary {
-  background-color: var(--primary-color);
-  color: var(--secondary-color);
-  padding: 0.8rem 1.5rem;
+.account-button {
+  background: none;
   border: none;
-  border-radius: var(--border-radius);
   cursor: pointer;
-  transition: background-color 0.3s;
+  padding: 4px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.account-button:hover {
+  background-color: var(--surface-color);
+}
+
+.account-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.account-avatar img {
   width: 100%;
-  margin-bottom: 0.5rem;
+  height: 100%;
+  object-fit: cover;
 }
 
-.btn-primary:hover {
-  background-color: #195aba;
+.app-main {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
 }
 
-.status {
-  display: inline-block;
-  margin: 0.5rem 0;
-  font-size: 0.9rem;
+.login-section {
+  margin-bottom: 24px;
 }
 
-.form label {
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
   display: block;
-  margin: 0.5rem 0;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
 }
 
-.form input[type="email"],
-.form input[type="password"] {
-  width: calc(100% - 1.6rem);
-  padding: 0.8rem;
-  margin-bottom: 1rem;
+.form-group input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.submit-button {
+  width: 100%;
+  padding: 10px 24px;
+  background-color: var(--primary-color);
+  color: white;
   border: none;
   border-radius: var(--border-radius);
-  background-color: #1e1e1e;
-  color: var(--text-color);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-.result {
-  display: block;
-  margin-top: 1rem;
-  font-size: 1rem;
-  padding: 0.5rem;
-  background-color: #282828;
-  border-radius: var(--border-radius);
+.submit-button:hover {
+  background-color: var(--primary-hover);
 }
 
-#buttonContainer button {
-  background-color: #444;
-  color: var(--secondary-color);
-  padding: 0.5rem 1rem;
-  margin: 0.2rem 0;
-  border: none;
-  border-radius: var(--border-radius);
+.status-container {
+  margin-top: 16px;
+}
+
+.status-text {
   display: block;
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.meeting-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.meeting-list button {
   width: 100%;
+  padding: 12px;
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
   text-align: left;
-  transition: background-color 0.3s;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 14px;
+  line-height: 1.4;
 }
 
-#buttonContainer button:hover {
-  background-color: #333;
+.meeting-list button:hover {
+  background-color: #f1f3f4;
+}
+
+.account-button {
+  position: relative;
+}
+
+.account-avatar img.connected {
+  border: 2px solid var(--primary-color);
+}
+
+.account-popup {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background: white;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-1);
+  z-index: 1000;
+  min-width: 200px;
+}
+
+.popup-content {
+  padding: 8px;
+}
+
+.popup-button {
+  width: 100%;
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.popup-button:hover {
+  background-color: var(--surface-color);
+}
+
+.status-text {
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.status-text.connected {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.status-text.error {
+  background-color: var(--error-color);
+  color: white;
+}
+
+.status-text.disconnected {
+  background-color: var(--surface-color);
+  color: var(--text-secondary);
+}
+
+.meeting-item {
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.meeting-button {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.meeting-button:hover {
+  background-color: #f1f3f4;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.meeting-button.loading {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.meeting-title {
+  font-weight: 500;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+
+.meeting-date {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.meeting-notification {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  border-radius: var(--border-radius);
+  background: white;
+  box-shadow: var(--shadow-1);
+  transition: all 0.3s ease;
+  z-index: 100;
+}
+
+.meeting-notification.hidden {
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px 12px;
+}
+
+.notification-message {
+  flex-grow: 1;
+  margin-right: auto;
+  font-size: 14px;
+}
+
+.notification-close {
+  flex: 0 0 24px;
+  width: 24px !important;
+  /* Add !important */
+  height: 24px !important;
+  /* Add !important */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none !important;
+  /* Add !important */
+  cursor: pointer !important;
+  /* Add !important */
+  font-size: 14px;
+  color: var(--text-secondary);
+  border-radius: 4px !important;
+  /* Add !important */
+  opacity: 0.7;
+  padding: 0;
+  margin-left: 8px;
+  min-width: unset !important;
+  /* Add this */
+}
+
+.notification-close:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.meeting-notification.success {
+  background-color: #e6f4ea;
+  border: 1px solid #137333;
+}
+
+.meeting-notification.error {
+  background-color: #fce8e6;
+  border: 1px solid #c5221f;
+}
+
+/* Loading animation */
+.meeting-button.loading::after {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-left: 8px;
+  border: 2px solid var(--primary-color);
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
